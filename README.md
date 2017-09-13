@@ -1,0 +1,2 @@
+# DbLite
+DbLite is a port of a very light weight relational database management system from Java to J#. It has a SQL-like syntax and uses serialization to manage tables. It is not meant to compete with real-world relational database management systems, rather provide simple, stand-alone, single user, relational database features that do not have to be installed seperatly and can be used without requiring a separate, complex RDBMS.
