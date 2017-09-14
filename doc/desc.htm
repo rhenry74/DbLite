@@ -1,0 +1,327 @@
+<html>
+	<head>
+		<title>Body</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+		<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+	</head>
+	<body bgcolor="#ffffff">
+		<h1 align="center">DbLite a.k.a. jordb
+		</h1>
+		<blockquote>
+			<p align="right"><a href="tabletest.htm">TableTest source</a> - for you programmers<br>
+				who want to see what it can do.</p>
+			<h2 align="center">Introduction</h2>
+		</blockquote>
+		<p>I wanted to write a program one night; one of those programs to help organize 
+			something; you know the type, limited database access and a half baked GUI; so 
+			I sat down and thought about the design, poked about a bit and realized I 
+			didn't have any JDBC implementation to work with. Now I had heard of free JDBC 
+			implementations that I could download somewhere but I thought this application 
+			was so limited I wouldn't bother with that, I'd just write a simple flat file 
+			table class to store data and give me some limited query capability. I'd done 
+			it before, in C and C++ so I figured I'd be able to crank it out in a couple of 
+			hours and I would have it for next time. I started looking at the java.io 
+			classes as I kicked the file format around and asked my self one simple 
+			question that sent me on an extended journey, "Wonder if I could store a Java 
+			object in a table column?"
+		</p>
+		<p>I spotted the object input and output streams and decided to try to write rows 
+			of objects to the disk instead of rows of primitive data types, like you would 
+			see in most relational databases. It didn't take long to realize that I would 
+			loose some flexibility because the objects are of arbitrary length. I wouldn't 
+			be able to open for read/write and update a record on the fly because the 
+			object I was writing could change in length and I could overwrite the row that 
+			existed further down in the file. I was using Java serialization to do this.
+		</p>
+		<p>Now those of you that fully understand Java serialization must bare with me 
+			because this was a road of discovery for me that I intend to share with those 
+			willing to read about it. So contain your snickers and wait a while, you might 
+			learn something too.
+		</p>
+		<p>I decided that since I couldn't write to a previously written file I wouldn't 
+			even try. I'd just open an output file and copy the input file to it as I go; 
+			when I reached a record that I wanted to update I'd write the updated data. I 
+			would not be able to back up, but you can't back up using JDBC either. If the 
+			table was closed early I'd just copy the rest of the data from the input to the 
+			output.
+		</p>
+		<p>I know it sounds terribly inefficient, but I didn't care, I didn't intend to 
+			deal with huge amounts of data anyway. In the past, I wrote such programs on 
+			lesser machines; say 386 PCs with 8 meg. of RAM, so I was pleasantly surprised 
+			at the performance, although I didn't really understand why it was slow, when 
+			it was slow. It was slow when the stream was opened and closed to the point 
+			that I thought something was wrong, but I pressed on anyway.
+		</p>
+		<p>Before too long I had 80% of the Table class you see can see in the sources. 
+			Like I said before, I had written similar programs in the past. I wrote a C++ 
+			implementation using templates that was so fast I tied it directly to a combo 
+			box. I'd like to say I intended to implement the JDBC interfaces but that fact 
+			is I stole the method prototypes from MFC implementations years ago. What did 
+			they do before cursors? Beats me.
+		</p>
+		<p>If you look at the Table source you will see that I write and read an Object 
+			array. That's it, pure and simple. The ramifications of this are that I cannot 
+			write primitive data types. The object i/o streams have special methods for the 
+			primitives. This meant that I couldn't just write an array, I'd have to jump 
+			through all kinds of hoops trying to figure out the data type of the column and 
+			call the right method on the stream. I didn't like not being able to write 
+			primitives but I bit the bullet and pressed on knowing that I'd have to covert 
+			the primitives to their java.lang equivalent before writing them to the 
+			database. This was hard for me, being a hacker that came up from assembly and 
+			C, but I didn't want to spend too much time on the storage and get on with the 
+			application. Ironically, I can't even remember what kind of application I 
+			started out to write.
+		</p>
+		<h2 align="center">Running Querys</h2>
+		<p>In the past I had created another class called Join and one called Filter. When 
+			you called moveNext on the Join it would call moveNext on two tables and make 
+			sure one of the columns from each was equal. When you called moveNext on the 
+			filter it would compare a field in the table to some value and call moveNext on 
+			the 'next object' until the comparison was true. I say the 'next object' 
+			because it could call to a Join, a Table or another Filter. With this you could 
+			set up a fairly complex relationship in code.
+		</p>
+		<p>I implemented the classes pretty much as described but at some point I hit a 
+			snag. The Join could move through two tables, and I could hook up another Join 
+			but a field from the third table had to be involved in the Join, not just the 
+			Filter. Any way I massaged the connections between the classes I couldn't come 
+			up with a combination that I couldn't break by thinking of some other SQL 
+			statement. I had become more affluent in SQL since the earlier designs. I 
+			decided to scrap the Filter and Join and went to bed.
+		</p>
+		<p>I don't know about you but I tend to dwell on things. In my spare time riding to 
+			work or at lunch I'd find my self trying to work out a way to put together a 
+			set of objects to form a working query. I also realized that my past designs 
+			lacked the ability to guarantee that every possible combination of rows across 
+			several tables would get hit. The more I pondered the more I thought about SQL 
+			statements. I began to break the statement up into clauses, working mostly with 
+			selects. The '<i>from'</i> piece was what I was missing. I didn't need to try 
+			to combine the <i>from</i> with the <i>join</i>. The <i>from</i> guaranteed 
+			every possible combination of rows and the <i>join</i> was a decision maker. 
+			The functionality I had called Filter was really a <i>where</i>, and it too was 
+			a decision maker. In fact, if you can have a <i>where</i> that compares too 
+			fields, instead of just a field to a value, you don't even need a <i>join</i>.
+		</p>
+		<p>At this point, if you are not familiar with SQL I've lost you. Sorry, I'm not 
+			going to explain SQL, I'm by no means an authority. If you are familiar with 
+			SQL you may be thinking "duh." Sorry, I've never had any formal education on 
+			SQL, I just piece it together in Java code and throw it at big servers for a 
+			living.
+		</p>
+		<p>The next night I proceeded to code a From class that you could add tables to and 
+			call moveNext to reach every combination of rows. But at the same time I had 
+			taken on a new tact. I appreciated the natural language comfort zone that SQL 
+			had given me. I began to think that I might eventually write an SQL parser that 
+			would splice together objects to form a running query.
+		</p>
+		<p>Normal people, when confronted with the prospect of coding an SQL parser, would 
+			be inclined to raise an eyebrow and say "Your kidding, right?" Better men than 
+			I have toiled for years creating SQL parsers. Well I'm no different, I hated 
+			the prospect of wading through all the possible permutations of SQL that might 
+			be thrown at a parser, so I made a resolution. I would parse the SQL I wanted 
+			to parse the way I wanted to parse it, and if it did not comply with the latest 
+			SQL standard, so be it. It would be close enough that anyone with experience 
+			with SQL could adjust.
+		</p>
+		<p>Before I started in on the parser however, I needed classes that I could hook 
+			together to form a working query. I knew I needed a From class but it didn't do 
+			any of the decision making that takes place in the SQL where clause. If you 
+			break the where clause down, it is a list of conditions specifically grouped 
+			and compared to one another by more conditions. A condition being true or 
+			false, some conditions getting data from the database and others making logical 
+			comparisons of the former, all of which boil down to one condition asserting 
+			whether or not to stop on the row combination.
+		</p>
+		<p><font size="3">To set up a running query I save a list of fields, setup a From and 
+				process the where clause into a tree of conditions. The final condition is the 
+				one at the base of the tree.</font>
+		</p>
+		<p><font size="3">Consider the following SQL statement:</font>
+		</p>
+		<p align="center"><img src="qdia.gif" width="689" height="296"></p>
+		<p><font size="3">To run the query I move through the From stopping on record 
+				combinations that satisfy the final condition. I then copy the listed fields of 
+				these records to the RecordSet.</font>
+		</p>
+		<p><font size="3">You may have noticed, the design (or lack thereof) actually evaluates 
+				the conditions in reverse order from how they were written. It also does not 
+				allow for grouping of conditions with parentheses. For these reasons I know 
+				this area of the functionality will need to be revisited later. For now, I'm 
+				tired of parsing text.</font>
+		</p>
+		<p><font size="3">I guess I should explain how the Where works. The class has 3 
+				different constructors, one that compares to fields, one that compares a field 
+				to a value on the right and one that compares a value on the left to a field. 
+				When the Where is asked to compare() it tries to use the new JDK 1.2 interface 
+				java.lang.Comparable to make a decision. If one of the objects does not 
+				implement Comparable and the comparison type is for equality, it will fall back 
+				on java.lang.Object.equals(); short of that it throws an exception. So, if you 
+				want to write your own classes and store them in the database, and you want to 
+				make fancy comparisons in your SQL, you have to implement Comparable. It's not 
+				a stretch, there's only one method.</font>
+		</p>
+		<p><font size="3">The And class just does a logical and of two Conditions. Same for the 
+				Or. I need to add an Xor, Like, and In to my library of Conditions. So far I 
+				support the following SQL syntax. I expect you to be able to figure out where 
+				all the spaces go. Lets keep it all lower case for now (the mainframers boo). 
+				Also, you must type out fully qualified field names in the form </font><font size="2" face="Courier New">
+				table.field</font><font size="3"> even if there is only one table in the 
+				statement (the crowd hisses).</font></p>
+		<hr>
+		<ul>
+			<li>
+				<font size="3" face="Courier New">$ - stands for comparison and can be =, &lt;, 
+					&gt;, &lt;=, &gt;= or !=</font>
+			<li>
+				<font size="3" face="Courier New">| - stands for or, as in this word or that word</font>
+			<li>
+				<font size="3" face="Courier New">[] - means the clause is optional</font>
+			<li>
+				<font size="3" face="Courier New">... - means you can have as many of these clauses 
+					as you want</font></li>
+		</ul>
+		<p><font face="Courier New">select [ first | unique ] field1 [ , field2 ... ]
+				<br>
+				from table1 [ , table2 ... ]
+				<br>
+				[ where field $ field | field $ value | value $ field
+				<br>
+				[ and | or field $ field | field $ value | value $ field ... ] ] </font>
+		</p>
+		<p><font face="Courier New">insert into table1 [ , table2 ... ]
+				<br>
+				( field [ , field2 ... ] )
+				<br>
+				values ( value1 [ , value2 ... ] ) </font>
+		</p>
+		<p><font face="Courier New">delete [ first ]
+				<br>
+				from table1 [ , table2 ... ]
+				<br>
+				[ where field $ field | field $ value | value $ field
+				<br>
+				[ and | or field $ field | field $ value | value $ field ... ] ] </font>
+		</p>
+		<p><font face="Courier New">update [ first ] table1
+				<br>
+				set field1 = value1 [ , field2 = value2 ... ]
+				<br>
+				[ where field $ field | field $ value | value $ field
+				<br>
+				[ and | or field $ field | field $ value | value $ field ... ] ] </font>
+		</p>
+		<hr>
+		<p><font size="3">That's it for now, I know it's weak. I fully intend to add object 
+				oriented extensions to the SQL. Everything is in place to make this happen, I 
+				just have to make time before my evaluation period for JPadPro runs out. At the 
+				time I wrote this I had 9 more days.</font>
+		</p>
+		<h2 align="center">Transactions, Parameters +</h2>
+		<p><font size="3">At that point I was particularly pleased with how quickly I was able 
+				to crank out a functional database engine. Granted, it's probably not very fast 
+				compared to professional database engines, but it's useful, object oriented, 
+				and free! So, in my zest, I began thinking about other features of professional 
+				systems, which might include parameters in the SQL, transactions that can be 
+				rolled back and multi-user client/server connectivity. I decided it should be 
+				fairly easy to add transactions if I could roll-back statements. Parameters... 
+				just kind of happened. The client/server piece adds another level of thread 
+				management, locking and performance issues, maybe someday I'll tackle it.</font>
+		</p>
+		<p><font size="3">Of my four Statement derived classes three of them actually modified 
+				the database. If I gave these three classes rollback capability I would be able 
+				to setup lists of modifying statements that could be rolled back if something 
+				should go wrong. I grouped these statements under a ModifyingStatement parent. 
+				I would maintain the list in a new class called Transaction. The Transaction 
+				would be able to mamage a list of ModifyingStatements, execute itself by 
+				calling execute on the ModifyingStatements and it would be able to rollback any 
+				changes on any ModifyingStatements it had executed so far.</font>
+		</p>
+		<p><font size="3">The class hierarchy for Statements was shaping up like this:</font>
+		</p>
+		<p align="center"><img src="hier.gif" width="380" height="130"></p>
+		<p><font size="3">All concrete statements implement build() and all concrete 
+				ModifyingStatements implement execute() and rollback(). Other nice features of 
+				the hierarchy is that all Statements can write themselves to disk, they all 
+				benefit from a protected processWhere() function and various other mechanisms 
+				that marry the statements to their parents. Among these inherited mechanisms 
+				was one that turned out to be very simple and very powerful, the ability to set 
+				any value of a built Statement. I'm jumping ahead, let me back up.</font>
+		</p>
+		<p><font size="3">The "building" of the Statement is the process of creating a running 
+				query as described earlier. Once a statement is built it is either executed or 
+				asked for a record set, at that point the tables are actually opened and the 
+				data is processed. The building of the statement is a process that only needs 
+				to happen once unless the essence of the SQL changes. You are probably 
+				wondering what the word "essence" has to do with SQL. Nothing, I just couldn't 
+				think of a better word. </font>
+		</p>
+		<p><font size="3">Consider this statement, as it stands it probably won't work, but it 
+				can still be built because it is syntactically correct. If we could substitute 
+				our own values for the literal values we could use it over and over.</font>
+		</p>
+		<p align="center"><img src="val.gif" width="374" height="137"></p>
+		<p><font size="3">As the Update is built the literal values are stored in a vector in 
+				the Statement class. The values are used when the update is executed, so we can 
+				change them between executes and use the update statement over and over without 
+				rebuilding it. To identify the value to change count the literal values, 
+				starting at 0, from left to right, top to bottom. The value substitution is 
+				built into the Statement class so it works for all Statements. I like to call 
+				it Parameters +.</font>
+		</p>
+		<p><font size="3">All Statements are Serializable. You could save a statement that has 
+				not been built but that doesn't really accomplish much. The trick is saving 
+				processor time by saving all of your statements after they are built and 
+				loading them up at run time. By the way, there is nothing to stop you from 
+				saving pre-built statements in a table. I plan to create an application that 
+				will allow developers to create and maintain SQL statements outside of their 
+				programs.</font>
+		</p>
+		<p><font size="3">I mentioned the rollBack() method earlier hinting at the ability to 
+				perform transactions. A transaction is a list of Statements that are related 
+				such that one is not worth doing if all can't be done. Since a select doesn't 
+				modify anything, it's use would be irrelevant to the outcome of subsequent 
+				statements, it really doesn't need to be part of a transaction. So only 
+				ModifyingStatements would ever be grouped into a transaction, and would need 
+				the ability to correct themselves. I created a Transaction class that 
+				ModifyingStatements could be added to and executed as a group. The statements 
+				must be built, Transaction will not build them. It executes the statements in 
+				the order they were added to the transaction, tracking there success. </font>
+		</p>
+		<p><font size="3">Transaction implementations I have dealt with in the past usually had 
+				an execute, commit and roll-back capability. I never really understood why you 
+				would ever execute a transaction successfully and then not commit it. What is 
+				commit for? Anyway, I decided to take advantage of the language's strong 
+				exception handling capability and throw exceptions from the execute that could 
+				be used to decide what to do next. I figured if a transaction went amiss, you 
+				would want to do one of three things:</font>
+		</p>
+		<ul type="disc">
+			<li>
+				<font size="3">rollback - undo every thing that has been done to this point</font>
+			<li>
+				<font size="3">retry - try the failing statement again, and continue with any 
+					subsequent statements</font>
+			<li>
+				<font size="3">continue - skip the failing statement, and continue with the rest of 
+					the statements</font>
+			</li>
+		</ul>
+		<p><font size="3">I also considered a ModifyingStatement that modified no rows a 
+				failure, however since a transaction can be continued you could catch the 
+				exception and go on. If you decide to roll-back each statement's rollBack() 
+				method is called in reverse order (back-roll?) Last but not least, since a 
+				Transaction is a list of Statements, and Statements are Serializable, why not 
+				be able serialize a Transaction as well?</font>
+		</p>
+		<p><font size="3">The roll-back capability is different for each type of 
+				ModifyingStatement. You can look at the code to see how I did it. I take 
+				advantage of a row id that is automatically generated by the table. This id is 
+				guaranteed to be unique, identifying the row. The Table also has a package 
+				level access method that will move the cursor to a row id, however it will not 
+				back up to move-to the row. Package level access to moveTo() getRecord() and 
+				setRecord() were put in place specifically to speed up roll-back capability.</font>
+		</p>
+		<h2 align="center">Coming soon .....</h2>
+		<h2 align="center">Object Relational</h2>
+	</body>
+</html>
