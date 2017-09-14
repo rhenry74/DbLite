@@ -1,0 +1,64 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{59A6F3F2-E060-4231-95E3-CDB7460EC100}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>DbLite</RootNamespace>
+    <AssemblyName>DbLite</AssemblyName>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="And.java" />
+    <Compile Include="CachedTable.java" />
+    <Compile Include="Condition.java" />
+    <Compile Include="Delete.java" />
+    <Compile Include="From.java" />
+    <Compile Include="Insert.java" />
+    <Compile Include="JordbException.java" />
+    <Compile Include="LogicalCondition.java" />
+    <Compile Include="ModifyingStatement.java" />
+    <Compile Include="Or.java" />
+    <Compile Include="Properties\AssemblyInfo.jsl" />
+    <Compile Include="RecordSet.java" />
+    <Compile Include="Select.java" />
+    <Compile Include="Statement.java" />
+    <Compile Include="StatementException.java" />
+    <Compile Include="Table.java" />
+    <Compile Include="TableException.java" />
+    <Compile Include="TableInterface.java" />
+    <Compile Include="Transaction.java" />
+    <Compile Include="TransactionException.java" />
+    <Compile Include="TrueCondition.java" />
+    <Compile Include="Update.java" />
+    <Compile Include="Where.java" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.VisualJSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
